@@ -9,9 +9,9 @@ class Program
 {
     private static TelegramBotClient _botClient;
     private static string _token = "7016136059:AAEPn56AjIKWLD58jii-B7Q26AEfQxsZ1A8";
-    private static string _caminhoAutenticacaoP3 = @"\\172.31.1.193\ged_djur_robo_cetelem\P3\AutenticacaoP3.json";
+    private static string _caminhoAutenticacaoP3 = @"\\rpasc01app02\ged_djur_robo_cetelem\P3\AutenticacaoP3.json";
     private static string _caminhoAutenticacaoAutorizador = @"\\sevrj01fs03\ged_djur_robo_cetelem\Autorizador\AutenticacaoAutorizador.json";
-    private static string _caminhoAutenticacaoFrontEnd = @"\\172.31.1.193\ged_djur_robo_cetelem\FrontEnd\AutenticacaoFrontEnd.json";
+    private static string _caminhoAutenticacaoFrontEnd = @"\\rpasc01app02\ged_djur_robo_cetelem\FrontEnd\AutenticacaoFrontEnd.json";
     private static string _nomeRobo = string.Empty;
     private static string _usuario = string.Empty;
     private static string _senha = string.Empty;
