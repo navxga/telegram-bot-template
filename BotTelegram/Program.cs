@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using BotTelegram;
+using Newtonsoft.Json.Linq;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -9,9 +10,12 @@ class Program
 {
     private static TelegramBotClient _botClient;
     private static string _token = "7016136059:AAEPn56AjIKWLD58jii-B7Q26AEfQxsZ1A8";
-    private static string _caminhoAutenticacaoP3 = @"\\rpasc01app02\ged_djur_robo_cetelem\P3\AutenticacaoP3.json";
-    private static string _caminhoAutenticacaoAutorizador = @"\\sevrj01fs03\ged_djur_robo_cetelem\Autorizador\AutenticacaoAutorizador.json";
-    private static string _caminhoAutenticacaoFrontEnd = @"\\rpasc01app02\ged_djur_robo_cetelem\FrontEnd\AutenticacaoFrontEnd.json";
+    //private static string _caminhoAutenticacaoP3 = @"\\rpasc01app02\ged_djur_robo_cetelem\P3\AutenticacaoP3.json";
+    //private static string _caminhoAutenticacaoAutorizador = @"\\sevrj01fs03\ged_djur_robo_cetelem\Autorizador\AutenticacaoAutorizador.json";
+    //private static string _caminhoAutenticacaoFrontEnd = @"\\rpasc01app02\ged_djur_robo_cetelem\FrontEnd\AutenticacaoFrontEnd.json";
+    private static string _caminhoAutenticacaoP3 = @"C:\Projects\Impacta\BotTelegram\AutenticacoesTeste\AutenticacaoP3.json";
+    private static string _caminhoAutenticacaoAutorizador = @"C:\Projects\Impacta\BotTelegram\AutenticacoesTeste\AutenticacaoAutorizador.json";
+    private static string _caminhoAutenticacaoFrontEnd = @"C:\Projects\Impacta\BotTelegram\AutenticacoesTeste\AutenticacaoFrontEnd.json";
     private static string _nomeRobo = string.Empty;
     private static string _usuario = string.Empty;
     private static string _senha = string.Empty;
@@ -68,9 +72,7 @@ class Program
                                             "- FrontEnd");
                     }
 
-                    string caminhoAutenticacao = ObterCaminho(robo);
-
-                    AtualizarSenha(caminhoAutenticacao, _usuario, _senha);
+                    AtualizarSenha(robo, _usuario, _senha);
 
                     string mensagemRetorno = "✅ Login alterado com sucesso!\n\n" +
                                             $"Novo usuário: {_usuario}\n" +
@@ -95,6 +97,39 @@ class Program
         }
     }
 
+    private static Task ErroAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+    {
+        var errorMessage = exception switch
+        {
+            ApiRequestException apiRequestException => $"Erro na API do Telegram:\n{apiRequestException.ErrorCode}\n{apiRequestException.Message}",
+            _ => exception.ToString()
+        };
+
+        Console.WriteLine(errorMessage);
+        return Task.CompletedTask;
+    }
+
+    private static void AtualizarSenha(RoboEnum robo, string usuario, string senha)
+    {
+        string caminhoAutenticacao = ObterCaminho(robo);
+
+        var jsonObj = JObject.Parse(System.IO.File.ReadAllText(caminhoAutenticacao));
+
+        jsonObj["Usuario"] = usuario;
+        jsonObj["Senha"] = senha;
+        jsonObj["IsAtivo"] = true;
+
+        if (robo == RoboEnum.P3)
+        {
+            jsonObj["UsuarioCrypto"] = Encrypter.Encriptografar(usuario);
+            jsonObj["SenhaCrypto"] = Encrypter.Encriptografar(senha);
+        }
+
+        string output = Newtonsoft.Json.JsonConvert.SerializeObject(jsonObj, Newtonsoft.Json.Formatting.Indented);
+
+        System.IO.File.WriteAllText(caminhoAutenticacao, output);
+    }
+
     private static string ObterCaminho(RoboEnum nomeRobo)
     {
         switch (nomeRobo)
@@ -108,31 +143,5 @@ class Program
             default:
                 throw new Exception("Nenhum robô identificado");
         }
-    }
-
-    private static void AtualizarSenha(string caminho, string usuario, string senha)
-    {
-        var json = System.IO.File.ReadAllText(caminho);
-        var jsonObj = JObject.Parse(json);
-
-        jsonObj["Usuario"] = usuario;
-        jsonObj["Senha"] = senha;
-        jsonObj["IsAtivo"] = true;
-
-        string output = Newtonsoft.Json.JsonConvert.SerializeObject(jsonObj, Newtonsoft.Json.Formatting.Indented);
-
-        System.IO.File.WriteAllText(caminho, output);
-    }
-
-    private static Task ErroAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
-    {
-        var errorMessage = exception switch
-        {
-            ApiRequestException apiRequestException => $"Erro na API do Telegram:\n{apiRequestException.ErrorCode}\n{apiRequestException.Message}",
-            _ => exception.ToString()
-        };
-
-        Console.WriteLine(errorMessage);
-        return Task.CompletedTask;
     }
 }
