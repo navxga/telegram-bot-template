@@ -1,4 +1,4 @@
-﻿using BotTelegram;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -10,12 +10,9 @@ class Program
 {
     private static TelegramBotClient _botClient;
     private static string _token = "7016136059:AAEPn56AjIKWLD58jii-B7Q26AEfQxsZ1A8";
-    //private static string _caminhoAutenticacaoP3 = @"\\rpasc01app02\ged_djur_robo_cetelem\P3\AutenticacaoP3.json";
-    //private static string _caminhoAutenticacaoAutorizador = @"\\sevrj01fs03\ged_djur_robo_cetelem\Autorizador\AutenticacaoAutorizador.json";
-    //private static string _caminhoAutenticacaoFrontEnd = @"\\rpasc01app02\ged_djur_robo_cetelem\FrontEnd\AutenticacaoFrontEnd.json";
-    private static string _caminhoAutenticacaoP3 = @"C:\Projects\Impacta\BotTelegram\AutenticacoesTeste\AutenticacaoP3.json";
-    private static string _caminhoAutenticacaoAutorizador = @"C:\Projects\Impacta\BotTelegram\AutenticacoesTeste\AutenticacaoAutorizador.json";
-    private static string _caminhoAutenticacaoFrontEnd = @"C:\Projects\Impacta\BotTelegram\AutenticacoesTeste\AutenticacaoFrontEnd.json";
+    private static string _caminhoAutenticacaoP3 = @"\\rpasc01app02\ged_djur_robo_cetelem\P3\AutenticacaoP3.json";
+    private static string _caminhoAutenticacaoAutorizador = @"\\sevrj01fs03\ged_djur_robo_cetelem\Autorizador\AutenticacaoAutorizador.json";
+    private static string _caminhoAutenticacaoFrontEnd = @"\\rpasc01app02\ged_djur_robo_cetelem\FrontEnd\AutenticacaoFrontEnd.json";
     private static string _nomeRobo = string.Empty;
     private static string _usuario = string.Empty;
     private static string _senha = string.Empty;
@@ -121,11 +118,18 @@ class Program
 
         if (robo == RoboEnum.P3)
         {
-            jsonObj["UsuarioCrypto"] = Encrypter.Encriptografar(usuario);
-            jsonObj["SenhaCrypto"] = Encrypter.Encriptografar(senha);
+            using (HttpClient client = new HttpClient())
+            {
+                string url = $"http://172.16.16.167:3008/p3encrypt/{usuario}/{senha}";
+
+                var result = JsonConvert.DeserializeObject<JObject>(client.GetAsync(url).Result.Content.ReadAsStringAsync().Result);
+
+                jsonObj["UsuarioCrypto"] = result["user"].ToString();
+                jsonObj["SenhaCrypto"] = result["passwd"].ToString();
+            }
         }
 
-        string output = Newtonsoft.Json.JsonConvert.SerializeObject(jsonObj, Newtonsoft.Json.Formatting.Indented);
+        string output = JsonConvert.SerializeObject(jsonObj, Formatting.Indented);
 
         System.IO.File.WriteAllText(caminhoAutenticacao, output);
     }
