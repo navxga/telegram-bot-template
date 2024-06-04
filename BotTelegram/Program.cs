@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using BotTelegram.Commands;
+using BotTelegram.Interfaces;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -10,19 +10,9 @@ class Program
 {
     private static TelegramBotClient _botClient;
     private static string _token = "7016136059:AAEPn56AjIKWLD58jii-B7Q26AEfQxsZ1A8";
-    private static string _caminhoAutenticacaoP3 = @"\\rpasc01app02\ged_djur_robo_cetelem\P3\AutenticacaoP3.json";
-    private static string _caminhoAutenticacaoAutorizador = @"\\sevrj01fs03\ged_djur_robo_cetelem\Autorizador\AutenticacaoAutorizador.json";
-    private static string _caminhoAutenticacaoFrontEnd = @"\\rpasc01app02\ged_djur_robo_cetelem\FrontEnd\AutenticacaoFrontEnd.json";
-    private static string _nomeRobo = string.Empty;
-    private static string _usuario = string.Empty;
-    private static string _senha = string.Empty;
-
-    public enum RoboEnum
-    {
-        P3,
-        Autorizador,
-        FrontEnd
-    }
+    public static string _caminhoAutenticacaoP3 = @"\\rpasc01app02\ged_djur_robo_cetelem\P3\AutenticacaoP3.json";
+    public static string _caminhoAutenticacaoAutorizador = @"\\sevrj01fs03\ged_djur_robo_cetelem\Autorizador\AutenticacaoAutorizador.json";
+    public static string _caminhoAutenticacaoFrontEnd = @"\\rpasc01app02\ged_djur_robo_cetelem\FrontEnd\AutenticacaoFrontEnd.json";
 
     static async Task Main(string[] args)
     {
@@ -31,7 +21,7 @@ class Program
         var cancellationToken = new CancellationTokenSource().Token;
         var receiverOptions = new ReceiverOptions { AllowedUpdates = { } };
 
-        _botClient.StartReceiving(AtualizarAsync, ErroAsync, receiverOptions, cancellationToken);
+        _botClient.StartReceiving(ControladorAsync, ErroAsync, receiverOptions, cancellationToken);
 
         var me = await _botClient.GetMeAsync();
 
@@ -39,7 +29,7 @@ class Program
         Console.ReadLine();
     }
 
-    private static async Task AtualizarAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    private static async Task ControladorAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         if (update.Type == UpdateType.Message && update.Message.Text != null)
         {
@@ -48,44 +38,38 @@ class Program
 
             try
             {
-                if (messageText.StartsWith("/AtualizarSenha"))
+                string comandoDigitado = messageText.ToUpper().Split(' ').FirstOrDefault();
+
+                ICommand command;
+
+                switch (comandoDigitado)
                 {
-                    if (messageText.Split(" ").Count() != 4)
-                    {
-                        throw new Exception("❌ O comando foi digitado em um formato incorreto!\n\n" +
-                                            "Formato correto: /AtualizarSenha NomeRobo Usuario Senha");
-                    }
+                    case "/HELP":
+                        command = new HelpCommand();
+                        break;
 
-                    _nomeRobo = messageText.Split(" ")[1].Trim();
-                    _usuario = messageText.Split(" ")[2].Trim();
-                    _senha = messageText.Split(" ")[3].Trim();
+                    case "/ATUALIZARSENHA":
+                        command = new AtualizarSenhaCommand();
+                        break;
 
-                    if (!Enum.TryParse(_nomeRobo, out RoboEnum robo))
-                    {
-                        throw new Exception("❌ O nome do robô não foi identificado!\n\n" +
-                                            "Opções de robô:\n" +
-                                            "- P3\n" +
-                                            "- Autorizador\n" +
-                                            "- FrontEnd");
-                    }
+                    case "/OBTERLOGINS":
+                        command = new ObterLoginsCommand();
+                        break;
 
-                    AtualizarSenha(robo, _usuario, _senha);
+                    default:
+                        {
+                            string mensagemRetornoErro = "❌ Comando não identificado!\n\n" +
+                                                        $"Para saber quais os comandos disponíveis, digite /Help.";
 
-                    string mensagemRetorno = "✅ Login alterado com sucesso!\n\n" +
-                                            $"Novo usuário: {_usuario}\n" +
-                                            $"Nova senha: {_senha}\n";
+                            await botClient.SendTextMessageAsync(chatId, mensagemRetornoErro, cancellationToken: cancellationToken);
 
-                    await botClient.SendTextMessageAsync(chatId, mensagemRetorno, cancellationToken: cancellationToken);
-
-                    return;
+                            return;
+                        }
                 }
-                else
-                {
-                    string mensagemRetorno = "❌ Comando não identificado!\n\n" +
-                                            $"Comando existente: /AtualizarSenha";
 
-                    await botClient.SendTextMessageAsync(chatId, mensagemRetorno, cancellationToken: cancellationToken);
-                }
+                string mensagemRetorno = command.Execute(messageText);
+
+                await botClient.SendTextMessageAsync(chatId, mensagemRetorno, cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
@@ -106,46 +90,4 @@ class Program
         return Task.CompletedTask;
     }
 
-    private static void AtualizarSenha(RoboEnum robo, string usuario, string senha)
-    {
-        string caminhoAutenticacao = ObterCaminho(robo);
-
-        var jsonObj = JObject.Parse(System.IO.File.ReadAllText(caminhoAutenticacao));
-
-        jsonObj["Usuario"] = usuario;
-        jsonObj["Senha"] = senha;
-        jsonObj["IsAtivo"] = true;
-
-        if (robo == RoboEnum.P3)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                string url = $"http://172.16.16.167:3008/p3encrypt/{usuario}/{senha}";
-
-                var result = JsonConvert.DeserializeObject<JObject>(client.GetAsync(url).Result.Content.ReadAsStringAsync().Result);
-
-                jsonObj["UsuarioCrypto"] = result["user"].ToString();
-                jsonObj["SenhaCrypto"] = result["passwd"].ToString();
-            }
-        }
-
-        string output = JsonConvert.SerializeObject(jsonObj, Formatting.Indented);
-
-        System.IO.File.WriteAllText(caminhoAutenticacao, output);
-    }
-
-    private static string ObterCaminho(RoboEnum nomeRobo)
-    {
-        switch (nomeRobo)
-        {
-            case RoboEnum.P3:
-                return _caminhoAutenticacaoP3;
-            case RoboEnum.Autorizador:
-                return _caminhoAutenticacaoAutorizador;
-            case RoboEnum.FrontEnd:
-                return _caminhoAutenticacaoFrontEnd;
-            default:
-                throw new Exception("Nenhum robô identificado");
-        }
-    }
 }
