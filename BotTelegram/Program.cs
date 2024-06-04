@@ -16,17 +16,28 @@ class Program
 
     static async Task Main(string[] args)
     {
-        _botClient = new TelegramBotClient(_token);
+        const string mutexName = "BotTelegramMutex";
 
-        var cancellationToken = new CancellationTokenSource().Token;
-        var receiverOptions = new ReceiverOptions { AllowedUpdates = { } };
+        using (var mutex = new Mutex(false, mutexName, out bool createdNew))
+        {
+            if (!createdNew)
+            {
+                Console.WriteLine("Uma instância do bot já está em execução.");
+                return;
+            }
 
-        _botClient.StartReceiving(ControladorAsync, ErroAsync, receiverOptions, cancellationToken);
+            _botClient = new TelegramBotClient(_token);
 
-        var me = await _botClient.GetMeAsync();
+            var cancellationToken = new CancellationTokenSource().Token;
+            var receiverOptions = new ReceiverOptions { AllowedUpdates = { } };
 
-        Console.WriteLine($"Start listening for @{me.Username}");
-        Console.ReadLine();
+            _botClient.StartReceiving(ControladorAsync, ErroAsync, receiverOptions, cancellationToken);
+
+            var me = await _botClient.GetMeAsync();
+
+            Console.WriteLine($"Start listening for @{me.Username}");
+            Console.ReadLine();
+        }
     }
 
     private static async Task ControladorAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
