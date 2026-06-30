@@ -1,5 +1,3 @@
-# CPASMS — Telegram Bot Architecture Template
-
 <details>
 <summary><b>🇧🇷 Português</b></summary>
 
