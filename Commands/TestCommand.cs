@@ -5,7 +5,6 @@ namespace TelegramBot.Commands
     public class TestCommand : ICommand
     {
         public string Trigger => "/test";
-        public string Description => "Tests if the bot is responding";
 
         public string Execute(string messageText)
         {
