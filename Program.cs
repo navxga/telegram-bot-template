@@ -23,8 +23,8 @@ builder.Services.AddSingleton<ITelegramBotClient>(sp =>
 
 #region Commands
 
-builder.Services.AddTransient<ICommand, HelpCommand>();
-//builder.Services.AddTransient<ICommand, *Command>(); Adicione os outros comandos aqui, seguindo o mesmo padrão.
+builder.Services.AddTransient<ICommand, TestCommand>();
+//builder.Services.AddTransient<ICommand, *Command>(); Add your other commands here, following the same pattern.
 
 #endregion
 

@@ -1,7 +1,7 @@
 <details>
 <summary><b>🇧🇷 Português</b></summary>
 
-## CPASMS — Template de Bot para Telegram
+## Template de Bot para Telegram
 
 Projeto base (template) para bots de Telegram em **.NET**, usando `Microsoft.Extensions.Hosting` e injeção de dependência. A ideia central é manter cada comando do bot isolado em sua própria classe, sem um `switch` central acoplando tudo.
 
@@ -57,7 +57,7 @@ dotnet user-secrets set "Telegram:Token" "SEU_TOKEN_AQUI"
 <details open>
 <summary><b>🇺🇸 English</b></summary>
 
-## CPASMS — Telegram Bot Architecture Template
+## Telegram Bot Architecture Template
 
 A base project (template) for Telegram bots in **.NET**, using `Microsoft.Extensions.Hosting` and dependency injection. The core idea is to keep each bot command isolated in its own class, instead of coupling everything to a central `switch`.
 
